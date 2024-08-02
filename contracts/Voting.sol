@@ -91,7 +91,7 @@ contract Voting {
         return voters[_voter].name;
     }
 
-    function getVoterStatus(address _voter) public view returns (bool hasVoted, uint vote, bool isRegistered) {
+    function getVoterStatus(address _voter) public view returns (bool hasVoted, uint voteId, bool isRegistered) {
         Voter memory voter = voters[_voter];
         return (voter.hasVoted, voter.vote, voter.isRegistered);
     }

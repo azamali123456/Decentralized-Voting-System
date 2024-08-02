@@ -10,6 +10,8 @@ const VoterPanel = () => {
   const [selectedContestant, setSelectedContestant] = useState('');
   const [votingStatus, setVotingStatus] = useState('');
   const [error, setError] = useState('');
+  const [newVoterAddress, setNewVoterAddress] = useState('');
+  const [newVoterName, setNewVoterName] = useState('');
 
   useEffect(() => {
     const loadContract = async () => {
@@ -39,25 +41,21 @@ const VoterPanel = () => {
       console.log('Contestants Count:', contestantsCount);
 
       // Fetch all contestants
-      const contestantsList = [];
-      for (let i = 1; i <= parseInt(contestantsCount, 10); i++) {
-        const contestant = await contractInstance.methods.contestants(i).call();
-        console.log('Contestant:', contestant);
-        contestantsList.push({
-          id: contestant.id,
-          name: contestant.name,
-          voteCount: parseInt(contestant.voteCount, 10),
-          party: contestant.party,
-          age: parseInt(contestant.age, 10),
-          qualification: contestant.qualification,
-        });
-      }
+      const contestantsList = await contractInstance.methods.getAllContestants().call(); // Use getAllContestants() if implemented
+      console.log('Contestants:', contestantsList);
 
       // Fetch the voting state
-      const state = await contractInstance.methods.state().call();
+      const state = await contractInstance.methods.getVotingStatus().call();
       console.log('Voting State:', state);
 
-      setContestants(contestantsList);
+      setContestants(contestantsList.map(contestant => ({
+        id: parseInt(contestant.id, 10),
+        name: contestant.name,
+        voteCount: parseInt(contestant.voteCount, 10),
+        party: contestant.party,
+        age: parseInt(contestant.age, 10),
+        qualification: contestant.qualification,
+      })));
       setVotingStatus(['Registration', 'Voting', 'Done'][parseInt(state, 10)]);
     } catch (err) {
       setError(err.message);
@@ -81,10 +79,17 @@ const VoterPanel = () => {
     }
   };
 
-  const handleRegister = async (address, name) => {
+  const handleRegister = async () => {
+    if (!newVoterAddress || !newVoterName) {
+      setError('Please provide both address and name.');
+      return;
+    }
+
     try {
       const accounts = await web3.eth.getAccounts();
-      await contract.methods.registerVoter(address, name).send({ from: accounts[0] });
+      await contract.methods.registerVoter(newVoterAddress, newVoterName).send({ from: accounts[0] });
+      setNewVoterAddress('');
+      setNewVoterName('');
       await loadContractData(contract); // Reload data after registration
     } catch (err) {
       setError(err.message);
@@ -110,6 +115,25 @@ const VoterPanel = () => {
             ))}
           </select>
           <button onClick={handleVote}>Vote</button>
+        </div>
+      )}
+
+      {votingStatus === 'Registration' && (
+        <div>
+          <h3>Register New Voter</h3>
+          <input
+            type="text"
+            placeholder="Voter Address"
+            value={newVoterAddress}
+            onChange={(e) => setNewVoterAddress(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Voter Name"
+            value={newVoterName}
+            onChange={(e) => setNewVoterName(e.target.value)}
+          />
+          <button onClick={handleRegister}>Register Voter</button>
         </div>
       )}
 
