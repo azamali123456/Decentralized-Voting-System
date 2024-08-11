@@ -1,151 +1,120 @@
-import React, { useState, useEffect } from 'react';
-import Web3 from 'web3';
-import VotingABI from './Voting.json'; // Adjust the path if necessary
-
-const web3 = new Web3(Web3.givenProvider || 'http://localhost:7545');
-
+import React, { useState, useEffect } from "react";
+import Web3 from "web3";
+import Voting from "./Voting.json";
+import { ToastContainer, toast } from 'react-toastify';
 const VoterPanel = () => {
-  const [contract, setContract] = useState(null);
-  const [contestants, setContestants] = useState([]);
-  const [selectedContestant, setSelectedContestant] = useState('');
-  const [votingStatus, setVotingStatus] = useState('');
-  const [error, setError] = useState('');
-  const [newVoterAddress, setNewVoterAddress] = useState('');
-  const [newVoterName, setNewVoterName] = useState('');
+  const [account, setAccount] = useState("");
+  const [candidates, setCandidates] = useState([]);
+  const [votingContract, setVotingContract] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccountIndex, setSelectedAccountIndex] = useState(0);
+  const [votedAccounts, setVotedAccounts] = useState([]);
+  const [notVotedAccounts, setNotVotedAccounts] = useState([]);
 
   useEffect(() => {
-    const loadContract = async () => {
+    const init = async () => {
       try {
+        const web3 = new Web3("http://127.0.0.1:7545");
+  
+        const accounts = await web3.eth.getAccounts();
+        setAccounts(accounts);
+        setAccount(accounts[selectedAccountIndex]);
+  
         const networkId = await web3.eth.net.getId();
-        console.log('Network ID:', networkId);
-        const networkData = VotingABI.networks[networkId];
-        if (!networkData) {
-          throw new Error('Smart contract is not deployed to the detected network.');
+        const deployedNetwork = Voting.networks[networkId];
+        const contract = new web3.eth.Contract(Voting.abi, deployedNetwork && deployedNetwork.address);
+        setVotingContract(contract);
+  
+        // Fetch candidates
+        const candidatesCount = await contract.methods.candidatesCount().call();
+        const candidatesList = [];
+        for (let i = 1; i <= candidatesCount; i++) {
+          const candidate = await contract.methods.candidates(i).call();
+          candidatesList.push(candidate);
         }
-        const contractInstance = new web3.eth.Contract(VotingABI.abi, networkData.address);
-        setContract(contractInstance);
-        await loadContractData(contractInstance);
-      } catch (err) {
-        setError(err.message);
-        console.error('Error loading contract:', err);
+        setCandidates(candidatesList);
+  
+        // Fetch voted and unvoted accounts
+        const votersStatus = await contract.methods.getVotersStatus().call();
+        console.log(votersStatus,"votersStatus")
+
+        setVotedAccounts(votersStatus[0]);
+        setNotVotedAccounts(votersStatus[1]);
+  
+      } catch (error) {
+        console.error("Error during initialization:", error);
       }
     };
+  
+    init();
+  }, [selectedAccountIndex]);
+  
 
-    loadContract();
-  }, []);
-
-  const loadContractData = async (contractInstance) => {
+  const vote = async (candidateId) => {
     try {
-      // Fetch the number of contestants
-      const contestantsCount = await contractInstance.methods.contestantsCount().call();
-      console.log('Contestants Count:', contestantsCount);
-
-      // Fetch all contestants
-      const contestantsList = await contractInstance.methods.getAllContestants().call(); // Use getAllContestants() if implemented
-      console.log('Contestants:', contestantsList);
-
-      // Fetch the voting state
-      const state = await contractInstance.methods.getVotingStatus().call();
-      console.log('Voting State:', state);
-
-      setContestants(contestantsList.map(contestant => ({
-        id: parseInt(contestant.id, 10),
-        name: contestant.name,
-        voteCount: parseInt(contestant.voteCount, 10),
-        party: contestant.party,
-        age: parseInt(contestant.age, 10),
-        qualification: contestant.qualification,
-      })));
-      setVotingStatus(['Registration', 'Voting', 'Done'][parseInt(state, 10)]);
-    } catch (err) {
-      setError(err.message);
-      console.error('Error fetching contract data:', err);
+      const accountToUse = accounts[selectedAccountIndex];
+      await votingContract.methods.vote(candidateId).send({ 
+        from: accountToUse,
+        gas: 200000 // Specify a higher gas limit here
+      });
+      toast.success(`Vote cast successfully from account: ${accountToUse}`)
+      const votersStatus = await votingContract.methods.getVotersStatus().call();
+      console.log(votersStatus,"votersStatus")
+      setVotedAccounts(votersStatus[0]);
+     
+      setNotVotedAccounts(votersStatus[1]);
+    } catch (error) {
+      console.error("Error voting:", error);
+      toast.success(`${error.message}`)
     }
   };
-
-  const handleVote = async () => {
-    if (!selectedContestant) {
-      setError('Please select a contestant.');
-      return;
-    }
-
-    try {
-      const accounts = await web3.eth.getAccounts();
-      await contract.methods.vote(selectedContestant).send({ from: accounts[0] });
-      await loadContractData(contract); // Reload data after voting
-    } catch (err) {
-      setError(err.message);
-      console.error('Error casting vote:', err);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (!newVoterAddress || !newVoterName) {
-      setError('Please provide both address and name.');
-      return;
-    }
-
-    try {
-      const accounts = await web3.eth.getAccounts();
-      await contract.methods.registerVoter(newVoterAddress, newVoterName).send({ from: accounts[0] });
-      setNewVoterAddress('');
-      setNewVoterName('');
-      await loadContractData(contract); // Reload data after registration
-    } catch (err) {
-      setError(err.message);
-      console.error('Error registering voter:', err);
-    }
-  };
-
+  
+ console.log(votedAccounts,"votedAccounts")
   return (
     <div>
-      <h2>Voter Panel</h2>
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+      <h1>Decentralized Voting</h1>
+      <p>Selected Account: {accounts[selectedAccountIndex]}</p>
 
-      <h3>Voting Status: {votingStatus}</h3>
+      <div>
+        <label>Select Account: </label>
+        <select
+          value={selectedAccountIndex}
+          onChange={(e) => setSelectedAccountIndex(e.target.value)}
+        >
+          {accounts.map((acc, index) => (
+            <option key={acc} value={index}>
+              {acc}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {votingStatus === 'Voting' && (
-        <div>
-          <select onChange={(e) => setSelectedContestant(e.target.value)}>
-            <option value="">Select Contestant</option>
-            {contestants.map((contestant) => (
-              <option key={contestant.id} value={contestant.id}>
-                {contestant.name} ({contestant.party})
-              </option>
-            ))}
-          </select>
-          <button onClick={handleVote}>Vote</button>
-        </div>
-      )}
-
-      {votingStatus === 'Registration' && (
-        <div>
-          <h3>Register New Voter</h3>
-          <input
-            type="text"
-            placeholder="Voter Address"
-            value={newVoterAddress}
-            onChange={(e) => setNewVoterAddress(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Voter Name"
-            value={newVoterName}
-            onChange={(e) => setNewVoterName(e.target.value)}
-          />
-          <button onClick={handleRegister}>Register Voter</button>
-        </div>
-      )}
-
-      <h3>Contestants:</h3>
+      <h2>Candidates</h2>
       <ul>
-        {contestants.map((contestant) => (
-          <li key={contestant.id}>
-            {contestant.name} ({contestant.party}) - {contestant.voteCount} votes
+        {candidates.map((candidate) => (
+          <li key={candidate.id}>
+            {candidate.name} - {candidate.voteCount} votes
+            <button onClick={() => vote(candidate.id)}>Vote</button>
           </li>
         ))}
       </ul>
+
+      <h2>Voted Accounts</h2>
+      <ul>
+        {votedAccounts.map((voter, index) => (
+          <li key={index}>{voter}</li>
+        ))}
+      </ul>
+
+      <h2>Not Voted Accounts</h2>
+      <ul>
+        {notVotedAccounts.map((voter, index) => (
+          <li key={index}>{voter}</li>
+        ))}
+      </ul>
+      <ToastContainer />
     </div>
+
   );
 };
 
