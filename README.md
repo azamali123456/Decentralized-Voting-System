@@ -1,5 +1,7 @@
 # D-Voting App
 
+![D-Voting App Logo](./public/image.png)
+
 D-Voting App is a decentralized voting application that allows users to participate in secure and transparent voting processes.
 
 ## Features
