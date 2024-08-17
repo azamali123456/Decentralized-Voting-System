@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import VoterPanel from './VoterPanel'
+import VoterPanel from './pages/VoterPanel'
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {

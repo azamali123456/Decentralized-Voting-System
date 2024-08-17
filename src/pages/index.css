@@ -1,0 +1,84 @@
+.input-field {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 200px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  margin-top: 70px;
+}
+
+.input-field:focus {
+  border-color: #007BFF;
+  outline: none;
+}
+
+
+
+.button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  background-color: #007BFF;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+
+.test-name{
+  background-color: aqua;
+  color: black;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  margin: 5px;
+  padding: 10px;
+
+}
+.test-name-div{
+  display: flex;
+  justify-Content: center;
+  align-Items: center;
+}
+
+.time{
+  background-color: aqua;
+  color: black;
+  font-size: 20px;
+
+  width: 200px;
+  height: 150px;
+  padding: 10px 40px;
+  margin: 10px;
+}
+
+.vote-button{
+  background-color: black;
+  color: azure;
+  padding: 5px 5px;
+  cursor: pointer;
+}
+
+.casted-voter{
+  background-color: aqua;
+  color: black;
+  padding: 5px 5px;
+  margin: 5px 5px;
+  cursor: pointer;
+  border: 1px solid aqua;
+  border-radius: 4px;
+}

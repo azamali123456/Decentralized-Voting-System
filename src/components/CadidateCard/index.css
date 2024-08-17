@@ -1,0 +1,31 @@
+.card {
+  width: 200px;
+  height: 150px;
+  /* padding: 10px 40px; */
+  background-color: rgb(23, 31, 31);
+  /* margin: 10px; */
+  color: white;
+  
+}
+
+.card-image{
+  width: 200;
+  height: 200;
+  position: relative;
+  top: 20px;
+}
+.vote-count{
+  position: relative;
+  top: -127px;
+  color: black;
+  font-size: 20px;
+  background-color: white;
+  padding: 8px 15px;
+  margin: 2px 2px;
+  border: 0px solid  transparent;
+  border-radius: 30px;
+}
+
+
+
+
